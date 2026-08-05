@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="mn" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURA STUDIO PRO 3.0 | Enterprise Audio Workstation</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;700&family=Orbitron:wght@400;600;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- External Libraries: Three.js for 3D Engine -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #020205;
+      --bg-panel: rgba(10, 12, 22, 0.85);
+      --bg-card: rgba(18, 22, 38, 0.6);
+      --border-color: rgba(0, 242, 254, 0.18);
+      --border-accent: rgba(255, 0, 85, 0.3);
+      
+      --neon-cyan: #00f2fe;
+      --neon-pink: #ff0055;
+      --neon-purple: #7928ca;
+      --neon-green: #00f5d4;
+      --neon-amber: #ffb703;
+      
+      --text-main: #f1f5f9;
+      --text-sub: #64748b;
+      --text-muted: #475569;
+      
+      --font-title: 'Orbitron', sans-serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+      --font-code: 'Fira Code', monospace;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.3);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 2px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--neon-cyan);
+    }
+
+    /* Main Container Grid */
+    .app-viewport {
+      display: grid;
+      grid-template-rows: 56px 1fr 100px;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* Top Navigation Bar */
+    header {
+      background: rgba(4, 5, 10, 0.95);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      backdrop-filter: blur(20px);
+      z-index: 100;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--font-title);
+      font-weight: 900;
+      font-size: 1.1rem;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #fff 0%, var(--neon-cyan) 50%, var(--neon-pink) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-badge {
+      font-size: 0.55rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+      color: #fff;
+      -webkit-text-fill-color: #fff;
+      font-family: var(--font-code);
+      letter-spacing: 1px;
+    }
+
+    .header-stats {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      font-family: var(--font-code);
+      font-size: 0.75rem;
+      color: var(--text-sub);
+    }
+
+    .stat-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stat-val {
+      color: var(--neon-cyan);
+      font-weight: 600;
+    }
+
+    /* Studio Main Layout */
+    main {
+      display: grid;
+      grid-template-columns: 320px 1fr 380px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .panel {
+      background: var(--bg-panel);
+      backdrop-filter: blur(25px);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+    }
+
+    .panel-right {
+      border-right: none;
+      border-left: 1px solid var(--border-color);
+    }
+
+    .panel-title {
+      padding: 12px 16px;
+      font-family: var(--font-title);
+      font-size: 0.75rem;
+      letter-spacing: 1.5px;
+      color: var(--neon-cyan);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0,0,0,0.3);
+    }
+
+    /* Left File & Track System */
+    .drop-zone {
+      margin: 12px;
+      padding: 16px;
+      border: 1.5px dashed var(--border-color);
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: rgba(0, 242, 254, 0.02);
+    }
+
+    .drop-zone:hover {
+      border-color: var(--neon-cyan);
+      background: rgba(0, 242, 254, 0.08);
+      box-shadow: 0 0 20px rgba(0, 242, 254, 0.15);
+    }
+
+    .playlist-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 12px 12px 12px;
+    }
+
+    .track-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: var(--bg-card);
+      margin-bottom: 6px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .track-card:hover {
+      border-color: var(--border-color);
+      transform: translateX(2px);
+    }
+
+    .track-card.active {
+      border-color: var(--neon-pink);
+      background: linear-gradient(90deg, rgba(255, 0, 85, 0.15) 0%, rgba(18, 22, 38, 0.8) 100%);
+    }
+
+    .track-meta {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .track-name {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .track-duration {
+      font-size: 0.65rem;
+      font-family: var(--font-code);
+      color: var(--text-sub);
+    }
+
+    /* Visualizer Central Engine */
+    .viewport-3d {
+      position: relative;
+      background: #000;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #webgl-canvas {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .canvas-overlay {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 20;
+      display: flex;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.65);
+      padding: 6px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      backdrop-filter: blur(12px);
+    }
+
+    .v-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-sub);
+      padding: 6px 12px;
+      font-family: var(--font-title);
+      font-size: 0.65rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .v-btn.active, .v-btn:hover {
+      background: var(--neon-pink);
+      color: #fff;
+      box-shadow: 0 0 12px var(--neon-pink);
+    }
+
+    /* Waveform Canvas Overlay */
+    .waveform-overlay {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      height: 80px;
+      background: rgba(5, 7, 15, 0.75);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+      z-index: 20;
+      padding: 8px;
+    }
+
+    #waveCanvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Tabbed DSP Control Suite */
+    .tab-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      background: rgba(0,0,0,0.2);
+    }
+
+    .tab-link {
+      flex: 1;
+      padding: 10px;
+      background: transparent;
+      border: none;
+      color: var(--text-sub);
+      font-family: var(--font-title);
+      font-size: 0.65rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab-link.active {
+      color: var(--neon-cyan);
+      border-bottom-color: var(--neon-cyan);
+      background: rgba(0, 242, 254, 0.05);
+    }
+
+    .tab-body {
+      display: none;
+      padding: 16px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .tab-body.active {
+      display: block;
+    }
+
+    /* DSP Rack Controls */
+    .eq-rack {
+      display: flex;
+      justify-content: space-between;
+      height: 180px;
+      background: var(--bg-card);
+      padding: 14px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 16px;
+    }
+
+    .eq-channel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .eq-channel span {
+      font-family: var(--font-code);
+      font-size: 0.6rem;
+      color: var(--text-sub);
+    }
+
+    .eq-slider {
+      -webkit-appearance: slider-vertical;
+      width: 6px;
+      flex: 1;
+      accent-color: var(--neon-cyan);
+    }
+
+    .fx-knob-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .fx-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    .fx-label {
+      font-size: 0.7rem;
+      color: var(--text-sub);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .fx-slider {
+      width: 100%;
+      accent-color: var(--neon-pink);
+    }
+
+    /* LRC Lyric Editor */
+    .lyric-box {
+      width: 100%;
+      height: 180px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--neon-green);
+      font-family: var(--font-code);
+      font-size: 0.75rem;
+      padding: 10px;
+      outline: none;
+      resize: none;
+      line-height: 1.5;
+    }
+
+    .lyric-display {
+      height: 120px;
+      overflow-y: auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px;
+      text-align: center;
+      font-size: 0.9rem;
+      margin-top: 12px;
+    }
+
+    .lyric-line {
+      margin: 4px 0;
+      color: var(--text-sub);
+      transition: all 0.2s;
+    }
+
+    .lyric-line.active {
+      color: var(--neon-amber);
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    /* Footer Transport Controls */
+    footer {
+      background: rgba(3, 4, 8, 0.98);
+      border-top: 1px solid var(--border-color);
+      display: grid;
+      grid-template-columns: 300px 1fr 300px;
+      align-items: center;
+      padding: 0 20px;
+      backdrop-filter: blur(20px);
+      z-index: 100;
+    }
+
+    .now-playing {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .album-art {
+      width: 46px;
+      height: 46px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+    }
+
+    .track-details {
+      overflow: hidden;
+    }
+
+    .title-text {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .artist-text {
+      font-size: 0.7rem;
+      color: var(--neon-cyan);
+      font-family: var(--font-code);
+    }
+
+    /* Transport Controls */
+    .transport {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ctrl-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .btn-icon {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .btn-icon:hover {
+      border-color: var(--neon-cyan);
+      color: var(--neon-cyan);
+      box-shadow: 0 0 12px rgba(0, 242, 254, 0.3);
+    }
+
+    .btn-primary {
+      width: 44px;
+      height: 44px;
+      background: var(--neon-pink);
+      border: none;
+      color: #fff;
+      box-shadow: 0 0 16px var(--neon-pink);
+    }
+
+    .btn-primary:hover {
+      transform: scale(1.05);
+    }
+
+    .scrubber {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--font-code);
+      font-size: 0.7rem;
+      color: var(--text-sub);
+    }
+
+    .time-bar {
+      flex: 1;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .time-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink));
+    }
+
+    .master-vol {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .vol-slider {
+      width: 90px;
+      accent-color: var(--neon-cyan);
+    }
+
+    /* Record Indicator */
+    .rec-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--neon-pink);
+      box-shadow: 0 0 8px var(--neon-pink);
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.3; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-viewport">
+    
+    <!-- TOP HEADER -->
+    <header>
+      <div class="brand-logo">
+        <span>⚡</span> AURA STUDIO <span class="brand-badge">PRO v3.0</span>
+      </div>
+
+      <div class="header-stats">
+        <div class="stat-box">DSP ENGINE: <span class="stat-val">32-Bit Float</span></div>
+        <div class="stat-box">SAMPLE RATE: <span class="stat-val" id="sampleRateDisp">48.0 kHz</span></div>
+        <div class="stat-box">BUFFER: <span class="stat-val">256ms</span></div>
+      </div>
+    </header>
+
+    <!-- STUDIO CORE -->
+    <main>
+      <!-- LEFT PANEL: PLAYLIST & FILE MANAGER -->
+      <section class="panel">
+        <div class="panel-title">
+          <span>TRACK PLAYLIST</span>
+          <span id="trackCount" style="color: var(--neon-cyan);">0</span>
+        </div>
+
+        <div class="drop-zone" id="dropZone">
+          <div style="font-size: 1.6rem; margin-bottom: 4px;">📂</div>
+          <strong style="font-size: 0.75rem;">Аудио Файл Оруулах</strong>
+          <p style="font-size: 0.65rem; color: var(--text-sub); margin-top: 2px;">MP3, WAV, FLAC файлыг энд чирнэ үү</p>
+          <input type="file" id="fileInput" accept="audio/*" multiple style="display: none;">
+        </div>
+
+        <div class="playlist-container" id="playlist">
+          <!-- Tracks dynamic rendering -->
+        </div>
+      </section>
+
+      <!-- CENTER: THREE.JS 3D ENGINE & WAVEFORM -->
+      <section class="viewport-3d">
+        <div class="canvas-overlay">
+          <button class="v-btn active" data-mode="3d-matrix">3D CYBER CORE</button>
+          <button class="v-btn" data-mode="bars">DSP SPECTRUM</button>
+          <button class="v-btn" data-mode="wave">OSCILLOSCOPE</button>
+        </div>
+
+        <canvas id="webgl-canvas"></canvas>
+
+        <div class="waveform-overlay">
+          <canvas id="waveCanvas"></canvas>
+        </div>
+      </section>
+
+      <!-- RIGHT PANEL: DSP EQUALIZER, FX & LYRIC ENGINE -->
+      <section class="panel panel-right">
+        <div class="tab-nav">
+          <button class="tab-link active" data-tab="tab-eq">DSP EQ</button>
+          <button class="tab-link" data-tab="tab-fx">RACK FX</button>
+          <button class="tab-link" data-tab="tab-lyrics">LYRICS</button>
+          <button class="tab-link" data-tab="tab-rec">RECORD</button>
+        </div>
+
+        <!-- EQ TAB -->
+        <div class="tab-body active" id="tab-eq">
+          <div style="font-size: 0.7rem; color: var(--neon-cyan); margin-bottom: 10px; font-family: var(--font-title);">8-Band Mastering Equalizer</div>
+          <div class="eq-rack">
+            <div class="eq-channel"><input type="range" class="eq-slider" min="-15" max="15" value="0" data-freq="0"><span>60Hz</span></div>
+            <div class="eq-channel"><input type="range" class="eq-slider" min="-15" max="15" value="0" data-freq="1"><span>170Hz</span></div>
+            <div class="eq-channel"><input type="range" class="eq-slider" min="-15" max="15" value="0" data-freq="2"><span>310Hz</span></div>
+            <div class="eq-channel"><input type="range" class="eq-slider" min="-15" max="15" value="0" data-freq="3"><span>600Hz</span></div>
+            <div class="eq-channel"><input type="range" class="eq-slider" min="-15" max="15" value="0" data-freq="4"><span>1kHz</span></div>
+            <div class="eq-channel"><input type="range" class="eq-slider" min="-15" max="15" value="0" data-freq="5"><span>3kHz</span></div>
+            <div class="eq-channel"><input type="range" class="eq-slider" min="-15" max="15" value="0" data-freq="6"><span>6kHz</span></div>
+            <div class="eq-channel"><input type="range" class="eq-slider" min="-15" max="15" value="0" data-freq="7"><span>12kHz</span></div>
+          </div>
+        </div>
+
+        <!-- RACK FX TAB -->
+        <div class="tab-body" id="tab-fx">
+          <div style="font-size: 0.7rem; color: var(--neon-cyan); margin-bottom: 10px; font-family: var(--font-title);">Spatial & Modulation FX</div>
+          <div class="fx-knob-grid">
+            <div class="fx-card">
+              <span class="fx-label">Reverb Level</span>
+              <input type="range" class="fx-slider" id="fxReverb" min="0" max="1" step="0.01" value="0">
+            </div>
+            <div class="fx-card">
+              <span class="fx-label">Stereo Panning</span>
+              <input type="range" class="fx-slider" id="fxPan" min="-1" max="1" step="0.01" value="0">
+            </div>
+            <div class="fx-card">
+              <span class="fx-label">Bass Enhancement</span>
+              <input type="range" class="fx-slider" id="fxBass" min="0" max="12" step="0.5" value="0">
+            </div>
+            <div class="fx-card">
+              <span class="fx-label">Drive / Distortion</span>
+              <input type="range" class="fx-slider" id="fxDrive" min="0" max="50" step="1" value="0">
+            </div>
+          </div>
+        </div>
+
+        <!-- LYRIC ENGINE TAB -->
+        <div class="tab-body" id="tab-lyrics">
+          <div style="font-size: 0.7rem; color: var(--neon-cyan); margin-bottom: 8px; font-family: var(--font-title);">LRC Synced Editor</div>
+          <textarea class="lyric-box" id="lrcInput" placeholder="[00:10.00] Энд дууны үгийг LRC форматаар оруулна уу..."></textarea>
+          <div class="lyric-display" id="lyricDisplay">
+            <div class="lyric-line">Сонгогдсон дууны үг энд харагдана</div>
+          </div>
+        </div>
+
+        <!-- RECORDING STUDIO TAB -->
+        <div class="tab-body" id="tab-rec">
+          <div style="font-size: 0.7rem; color: var(--neon-pink); margin-bottom: 10px; font-family: var(--font-title);">Live Audio Recorder</div>
+          <button id="recBtn" class="btn-icon btn-primary" style="width: 100%; border-radius: 6px; height: 40px; font-family: var(--font-title); font-size: 0.75rem;">
+            🎙️ Дуу хурааж эхлэх
+          </button>
+          <div id="recStatus" style="font-size: 0.7rem; color: var(--text-sub); margin-top: 10px; text-align: center;">Микрофон бэлэн</div>
+        </div>
+      </section>
+    </main>
+
+    <!-- FOOTER CONTROLLER -->
+    <footer>
+      <div class="now-playing">
+        <div class="album-art">🎧</div>
+        <div class="track-details">
+          <div class="title-text" id="trackTitle">Файл сонгогдоогүй байна</div>
+          <div class="artist-text" id="trackArtist">AURA DSP ENGINE</div>
+        </div>
+      </div>
+
+      <div class="transport">
+        <div class="ctrl-row">
+          <button class="btn-icon" id="prevBtn">⏮</button>
+          <button class="btn-icon btn-primary" id="playBtn">▶</button>
+          <button class="btn-icon" id="nextBtn">⏭</button>
+        </div>
+
+        <div class="scrubber">
+          <span id="currTime">00:00</span>
+          <div class="time-bar" id="timeBar">
+            <div class="time-fill" id="timeFill"></div>
+          </div>
+          <span id="durTime">00:00</span>
+        </div>
+      </div>
+
+      <div class="master-vol">
+        <span style="font-size: 0.9rem;">🔊</span>
+        <input type="range" class="vol-slider" id="masterVol" min="0" max="1" step="0.01" value="0.8">
+      </div>
+    </footer>
+
+  </div>
+
+  <audio id="audioCore"></audio>
+
+  <!-- ADVANCED AUDIO ENGINE CODE -->
+  <script>
+    /**
+     * AURA STUDIO PRO - ENTERPRISE AUDIO ENGINE & VISUALIZER
+     */
+    class AudioStudioCore {
+      constructor() {
+        this.tracks = [];
+        this.currentTrackIndex = -1;
+        this.isPlaying = false;
+        this.visMode = '3d-matrix';
+        this.lyrics = [];
+
+        // Recording System
+        this.mediaRecorder = null;
+        this.audioChunks = [];
+        this.isRecording = false;
+
+        this.initDOM();
+        this.initAudioContext();
+        this.initThreeJS();
+        this.initEvents();
+        this.animate();
+      }
+
+      initDOM() {
+        this.audio = document.getElementById('audioCore');
+        this.playBtn = document.getElementById('playBtn');
+        this.timeBar = document.getElementById('timeBar');
+        this.timeFill = document.getElementById('timeFill');
+        this.currTimeEl = document.getElementById('currTime');
+        this.durTimeEl = document.getElementById('durTime');
+        this.trackTitle = document.getElementById('trackTitle');
+        this.playlistEl = document.getElementById('playlist');
+        this.trackCountEl = document.getElementById('trackCount');
+
+        this.waveCanvas = document.getElementById('waveCanvas');
+        this.waveCtx = this.waveCanvas.getContext('2d');
+      }
+
+      initAudioContext() {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioContext();
+
+        this.analyser = this.ctx.createAnalyser();
+        this.analyser.fftSize = 512;
+
+        this.source = this.ctx.createMediaElementSource(this.audio);
+
+        // 8-Band Equalizer Setup
+        const frequencies = [60, 170, 310, 600, 1000, 3000, 6000, 12000];
+        this.eqFilters = frequencies.map(freq => {
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'peaking';
+          filter.frequency.value = freq;
+          filter.gain.value = 0;
+          return filter;
+        });
+
+        // Stereo Panning
+        this.panner = this.ctx.createStereoPanner();
+
+        // Chain Connectors
+        let node = this.source;
+        this.eqFilters.forEach(filter => {
+          node.connect(filter);
+          node = filter;
+        });
+
+        node.connect(this.panner);
+        this.panner.connect(this.analyser);
+        this.analyser.connect(this.ctx.destination);
+
+        document.getElementById('sampleRateDisp').innerText = `${(this.ctx.sampleRate / 1000).toFixed(1)} kHz`;
+      }
+
+      initThreeJS() {
+        const canvas = document.getElementById('webgl-canvas');
+        this.scene = new THREE.Scene();
+        
+        this.camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+        this.camera.position.z = 30;
+
+        this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+
+        // Create 3D Cyber Core Mesh
+        const geometry = new THREE.IcosahedronGeometry(10, 3);
+        const material = new THREE.MeshBasicMaterial({
+          color: 0x00f2fe,
+          wireframe: true
+        });
+
+        this.cyberCore = new THREE.Mesh(geometry, material);
+        this.scene.add(this.cyberCore);
+
+        // Particle System Surround
+        const particlesGeo = new THREE.BufferGeometry();
+        const count = 1000;
+        const posArray = new Float32Array(count * 3);
+
+        for (let i = 0; i < count * 3; i++) {
+          posArray[i] = (Math.random() - 0.5) * 100;
+        }
+
+        particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const particlesMat = new THREE.PointsMaterial({
+          size: 0.2,
+          color: 0xff0055
+        });
+
+        this.particles = new THREE.Points(particlesGeo, particlesMat);
+        this.scene.add(this.particles);
+      }
+
+      initEvents() {
+        // Drag & Drop File System
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => this.handleFiles(e.target.files));
+
+        dropZone.addEventListener('dragover', (e) => e.preventDefault());
+        dropZone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          this.handleFiles(e.dataTransfer.files);
+        });
+
+        // Transport Controls
+        this.playBtn.addEventListener('click', () => this.togglePlay());
+        document.getElementById('prevBtn').addEventListener('click', () => this.playPrev());
+        document.getElementById('nextBtn').addEventListener('click', () => this.playNext());
+
+        this.audio.addEventListener('timeupdate', () => this.updateProgress());
+        this.audio.addEventListener('ended', () => this.playNext());
+
+        this.timeBar.addEventListener('click', (e) => {
+          if (!this.audio.duration) return;
+          const rect = this.timeBar.getBoundingClientRect();
+          const pos = (e.clientX - rect.left) / rect.width;
+          this.audio.currentTime = pos * this.audio.duration;
+        });
+
+        document.getElementById('masterVol').addEventListener('input', (e) => {
+          this.audio.volume = e.target.value;
+        });
+
+        // Mode Switching
+        document.querySelectorAll('.v-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.v-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            this.visMode = e.target.getAttribute('data-mode');
+          });
+        });
+
+        // Tabs Routing
+        document.querySelectorAll('.tab-link').forEach(link => {
+          link.addEventListener('click', (e) => {
+            document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
+            document.querySelectorAll('.tab-body').forEach(b => b.classList.remove('active'));
+
+            e.target.classList.add('active');
+            document.getElementById(e.target.getAttribute('data-tab')).classList.add('active');
+          });
+        });
+
+        // EQ Listeners
+        document.querySelectorAll('.eq-slider').forEach(slider => {
+          slider.addEventListener('input', (e) => {
+            const idx = parseInt(e.target.getAttribute('data-freq'));
+            this.eqFilters[idx].gain.value = parseFloat(e.target.value);
+          });
+        });
+
+        // FX Controls
+        document.getElementById('fxPan').addEventListener('input', (e) => {
+          this.panner.pan.value = parseFloat(e.target.value);
+        });
+
+        // Lyrics Sync Editor
+        document.getElementById('lrcInput').addEventListener('input', (e) => {
+          this.parseLRC(e.target.value);
+        });
+
+        // Record Engine
+        document.getElementById('recBtn').addEventListener('click', () => this.toggleRecord());
+
+        window.addEventListener('resize', () => this.onResize());
+      }
+
+      handleFiles(files) {
+        Array.from(files).forEach(file => {
+          if (file.type.startsWith('audio/')) {
+            this.tracks.push({
+              title: file.name.replace(/\.[^/.]+$/, ""),
+              url: URL.createObjectURL(file)
+            });
+          }
+        });
+
+        this.renderPlaylist();
+        if (this.currentTrackIndex === -1 && this.tracks.length > 0) {
+          this.selectTrack(0);
+        }
+      }
+
+      renderPlaylist() {
+        this.trackCountEl.innerText = this.tracks.length;
+        this.playlistEl.innerHTML = this.tracks.map((t, i) => `
+          <div class="track-card ${i === this.currentTrackIndex ? 'active' : ''}" onclick="studio.selectTrack(${i})">
+            <div class="track-meta">
+              <div class="track-name">${t.title}</div>
+              <div class="track-duration">Local Audio File</div>
+            </div>
+            <span style="font-size: 0.8rem;">🎵</span>
+          </div>
+        `).join('');
+      }
+
+      selectTrack(index) {
+        this.currentTrackIndex = index;
+        const track = this.tracks[index];
+        this.audio.src = track.url;
+        this.trackTitle.innerText = track.title;
+        this.renderPlaylist();
+        this.play();
+      }
+
+      togglePlay() {
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+        if (this.isPlaying) this.pause();
+        else this.play();
+      }
+
+      play() {
+        if (this.tracks.length === 0) return;
+        this.audio.play().then(() => {
+          this.isPlaying = true;
+          this.playBtn.innerText = '⏸';
+        });
+      }
+
+      pause() {
+        this.audio.pause();
+        this.isPlaying = false;
+        this.playBtn.innerText = '▶';
+      }
+
+      playNext() {
+        if (this.tracks.length === 0) return;
+        this.selectTrack((this.currentTrackIndex + 1) % this.tracks.length);
+      }
+
+      playPrev() {
+        if (this.tracks.length === 0) return;
+        this.selectTrack((this.currentTrackIndex - 1 + this.tracks.length) % this.tracks.length);
+      }
+
+      updateProgress() {
+        if (!this.audio.duration) return;
+        const pct = (this.audio.currentTime / this.audio.duration) * 100;
+        this.timeFill.style.width = `${pct}%`;
+        this.currTimeEl.innerText = this.formatTime(this.audio.currentTime);
+        this.durTimeEl.innerText = this.formatTime(this.audio.duration);
+
+        this.syncLyrics();
+      }
+
+      formatTime(sec) {
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+      }
+
+      // LRC Parser & Lyric Syncing Engine
+      parseLRC(text) {
+        const lines = text.split('\n');
+        this.lyrics = [];
+        const reg = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
+
+        lines.forEach(line => {
+          const match = reg.exec(line);
+          if (match) {
+            const time = parseInt(match[1]) * 60 + parseInt(match[2]) + parseFloat(match[3]) / 100;
+            this.lyrics.push({ time, text: match[4].trim() });
+          }
+        });
+      }
+
+      syncLyrics() {
+        if (this.lyrics.length === 0) return;
+        const cur = this.audio.currentTime;
+        let activeLine = '';
+
+        for (let i = 0; i < this.lyrics.length; i++) {
+          if (cur >= this.lyrics[i].time) {
+            activeLine = this.lyrics[i].text;
+          }
+        }
+
+        if (activeLine) {
+          document.getElementById('lyricDisplay').innerHTML = `<div class="lyric-line active">${activeLine}</div>`;
+        }
+      }
+
+      // Live Recording Feature
+      toggleRecord() {
+        const btn = document.getElementById('recBtn');
+        const status = document.getElementById('recStatus');
+
+        if (!this.isRecording) {
+          navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+            this.mediaRecorder = new MediaRecorder(stream);
+            this.audioChunks = [];
+
+            this.mediaRecorder.ondataavailable = e => this.audioChunks.push(e.data);
+            this.mediaRecorder.onstop = () => {
+              const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+              const audioUrl = URL.createObjectURL(audioBlob);
+              this.tracks.push({ title: `Live Recording #${this.tracks.length + 1}`, url: audioUrl });
+              this.renderPlaylist();
+            };
+
+            this.mediaRecorder.start();
+            this.isRecording = true;
+            btn.innerHTML = `<span class="rec-indicator"></span> Бичиж байна...`;
+            status.innerText = 'Микрофон идэвхтэй байна';
+          });
+        } else {
+          this.mediaRecorder.stop();
+          this.isRecording = false;
+          btn.innerHTML = `🎙️ Дуу хурааж эхлэх`;
+          status.innerText = 'Бичлэг хадгалагдлаа';
+        }
+      }
+
+      onResize() {
+        const canvas = document.getElementById('webgl-canvas');
+        this.camera.aspect = canvas.clientWidth / canvas.clientHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+      }
+
+      animate() {
+        requestAnimationFrame(() => this.animate());
+
+        const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+        this.analyser.getByteFrequencyData(dataArray);
+
+        // 3D Core Motion Animation
+        const avgFreq = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+        
+        this.cyberCore.rotation.x += 0.005;
+        this.cyberCore.rotation.y += 0.01;
+        const scale = 1 + (avgFreq / 255) * 0.8;
+        this.cyberCore.scale.set(scale, scale, scale);
+
+        this.particles.rotation.y -= 0.002;
+
+        this.renderer.render(this.scene, this.camera);
+
+        // Render Waveform Canvas
+        this.renderWaveform(dataArray);
+      }
+
+      renderWaveform(dataArray) {
+        const w = this.waveCanvas.width = this.waveCanvas.parentElement.clientWidth;
+        const h = this.waveCanvas.height = this.waveCanvas.parentElement.clientHeight;
+
+        this.waveCtx.clearRect(0, 0, w, h);
+        this.waveCtx.beginPath();
+        this.waveCtx.strokeStyle = '#00f2fe';
+        this.waveCtx.lineWidth = 2;
+
+        const sliceWidth = w / dataArray.length;
+        let x = 0;
+
+        for (let i = 0; i < dataArray.length; i++) {
+          const v = dataArray[i] / 128.0;
+          const y = (v * h) / 2;
+
+          if (i === 0) this.waveCtx.moveTo(x, y);
+          else this.waveCtx.lineTo(x, y);
+
+          x += sliceWidth;
+        }
+
+        this.waveCtx.lineTo(w, h / 2);
+        this.waveCtx.stroke();
+      }
+    }
+
+    // Engine Start
+    let studio;
+    window.addEventListener('DOMContentLoaded', () => {
+      studio = new AudioStudioCore();
+    });
+  </script>
+</body>
+</html>
